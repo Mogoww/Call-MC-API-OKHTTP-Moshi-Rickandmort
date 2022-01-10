@@ -8,6 +8,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import com.example.call_mc_api_okhttp_moshi_rickandmort.databinding.ActivityMainBinding
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
+import com.squareup.moshi.Types
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import okhttp3.*
 import okio.IOException
@@ -52,9 +53,9 @@ class MainActivity : AppCompatActivity() {
 
     fun run() {
 
-        val url = "https://rickandmortyapi.com/api/character"
+        // val url = "https://rickandmortyapi.com/api/character"
         //val url = "https://rickandmortyapi.com/api/character/?name=rick&status=alive"
-        //val url = "https://rickandmortyapi.com/api/character/1,2"
+        val url = "https://rickandmortyapi.com/api/character/1,2"
         //val url = "https://rickandmortyapi.com/api/character/1"
 
         val request = Request.Builder()
@@ -62,8 +63,10 @@ class MainActivity : AppCompatActivity() {
             .build()
 
         val adapterAll: JsonAdapter<CharactersAll> = moshi.adapter(CharactersAll::class.java)
-        val adapterNumber: JsonAdapter<Character> = moshi.adapter(Character::class.java)
-        val adapterOther: JsonAdapter<Result> = moshi.adapter(Result::class.java)
+        val type = Types.newParameterizedType(List::class.java, Character::class.java)
+        val adapterNumber: JsonAdapter<List<Character>> = moshi.adapter(type)
+
+        val adapterOther: JsonAdapter<Character> = moshi.adapter(Character::class.java)
 
         client.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
@@ -74,31 +77,29 @@ class MainActivity : AppCompatActivity() {
                 response.use {
                     if (!response.isSuccessful) throw IOException("Unexpected code $response")
 
-                    val body = response.body!!.string()
 
+                    val body = response.body!!.string()
 
                     if (body.substring(0, 7) == "{\"info\"") {
 
 
                         val data = adapterAll.fromJson(body)
 
+                             if (data != null) {
+                                 data.results.forEach {
+                                     Log.i("CHARACTER", "Name : " + it.name + " ")
+                                 }
+                             }
+
+                    } else if (body.substring(0, 7) == "[{\"id\":") {
+
+                        val data = adapterNumber.fromJson(body)
                         if (data != null) {
-                            data.results.forEach {
-                                Log.i("CHARACTER", "Name : " + it.name + " ")
+                            data.forEach{
+                                Log.i("CHARACTER", it.name)
                             }
                         }
-
-                    } else if(body.substring(0, 7) == "[{\"id\":") {
-
-                        val datas = "{ \"master\":" + body + "}"
-                        val data = adapterNumber.fromJson(datas)
-
-                        if (data != null) {
-                            data.master.forEach {
-                                Log.i("CHARACTER", "Name : " + it.name + " ")
-                            }
-                        }
-                    }else{
+                    } else {
                         val data = adapterOther.fromJson(body)
                         if (data != null) {
                                 Log.i("CHARACTER", "Name : " + data.name + " ")

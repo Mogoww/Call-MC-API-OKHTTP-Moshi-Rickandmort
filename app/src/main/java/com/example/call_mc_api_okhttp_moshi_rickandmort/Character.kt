@@ -7,7 +7,7 @@ import com.squareup.moshi.JsonClass
 
 data class CharactersAll(
     val info: Info,
-    val results: List<Result>
+    val results: List<Character>
 )
 
 data class Info(
@@ -18,11 +18,9 @@ data class Info(
 )
 
 
-data class Character(
-    val master: List<Result>
-)
 
-data class Result(
+
+data class Character(
     val created: String,
     val episode: List<String>,
     val gender: String,
